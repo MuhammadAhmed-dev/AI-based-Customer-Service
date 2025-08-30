@@ -1,0 +1,6 @@
+flask
+werkzeug
+sentence-transformers
+faiss-cpu
+PyMuPDF
+openai
