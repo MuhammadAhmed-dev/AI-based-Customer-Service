@@ -1,5 +1,5 @@
 # === app.py (Flask app entry point) ===
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 import os, time
 from utils.safety import sanitize_input
 from utils.pdf_loader import extract_text_from_pdf
@@ -10,6 +10,7 @@ import webbrowser
 import threading
 from utils.demo import check_demo_expiry
 
+
 start_total = time.perf_counter()
 print("=== Timer Started ===")
 
@@ -18,6 +19,11 @@ check_demo_expiry()
 print(f"[Timer] Demo check: {time.perf_counter() - t0:.3f} sec")
 
 app = Flask(__name__)
+
+
+# key for managing user sessions
+app.secret_key = os.urandom(24)  
+
 
 vs = None
 
@@ -51,6 +57,9 @@ def index():
     answer = None
     question = None
 
+    if "chat_history" not in session:
+        session["chat_history"] = []
+        
     if request.method == "POST":
         t_post = time.perf_counter()
         question = request.form.get("question")
@@ -59,8 +68,16 @@ def index():
             if sanitized.startswith("⚠️"):
                 answer = sanitized
             else:
+                
+                
                 t_retrieve = time.perf_counter()
-                answer = retrieve_answer(question, vs, history=[])
+                answer = retrieve_answer(question, vs, history=session["chat_history"])
+
+                # ✅ Save user Q/A in session memory for current session only
+                session["chat_history"].append({"user": question, "bot": answer})
+                session.modified = True  # Ensures Flask persists session updates
+                
+                
                 print(f"[Timer] Answer retrieval: {time.perf_counter() - t_retrieve:.3f} sec")
         print(f"[Timer] Request handling: {time.perf_counter() - t_post:.3f} sec")
     return render_template("index.html", answer=answer, question=question)
