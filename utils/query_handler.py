@@ -12,6 +12,7 @@ def retrieve_answer(user_query, vector_store, history=[]):
     query_embedding = get_embeddings([user_query])
     retrieved_chunks = vector_store.search(query_embedding, top_k=4)
     context = "\n".join(retrieved_chunks)
+    
     answer = generate_answer(context, user_query, history)
 
     # 3. Store in cache
